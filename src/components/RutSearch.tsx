@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Loader2, CreditCard, Sparkles, CornerDownLeft } from 'lucide-react';
-import { formatRut, cleanRut, validateRut } from '@/lib/rut';
+import { Search, X, Loader2, CreditCard, Sparkles, CornerDownLeft, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { formatRut, cleanRut, validateRut, calculateExpectedDv } from '@/lib/rut';
+import { toast } from 'sonner';
 
 interface RutSearchProps {
   onSearch: (rut: string) => void;
@@ -35,6 +36,11 @@ export function RutSearch({ onSearch, isLoading, initialRut = '' }: RutSearchPro
     }
   };
 
+  const clean = cleanRut(rutInput);
+  const isComplete = clean.length >= 7;
+  const isValid = isComplete ? validateRut(clean) : true;
+  const expectedDv = isComplete && !isValid ? calculateExpectedDv(clean) : '';
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -43,9 +49,18 @@ export function RutSearch({ onSearch, isLoading, initialRut = '' }: RutSearchPro
   };
 
   const executeSearch = () => {
-    const clean = cleanRut(rutInput);
-    if (!clean) return;
-    onSearch(clean);
+    const targetClean = cleanRut(rutInput);
+    if (!targetClean) return;
+
+    // Strict Chilean RUT check
+    if (!validateRut(targetClean)) {
+      toast.error('RUT Erróneo', {
+        description: `El RUT ${formatRut(targetClean)} no es válido según la norma chilena (Módulo 11). Revisa el dígito verificador.`,
+      });
+      return;
+    }
+
+    onSearch(targetClean);
   };
 
   const handleClear = () => {
@@ -53,15 +68,25 @@ export function RutSearch({ onSearch, isLoading, initialRut = '' }: RutSearchPro
     inputRef.current?.focus();
   };
 
-  const isValid = rutInput.length > 7 ? validateRut(rutInput) : true;
-
   return (
     <div className="w-full max-w-3xl mx-auto px-1 sm:px-0">
       <div className="relative">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center bg-[#0B1C28] rounded-2xl border-2 border-[#1A3447] focus-within:border-[#0284C7] p-2 sm:p-2.5 transition-colors gap-2 sm:gap-0">
+        <div className={`flex flex-col sm:flex-row items-stretch sm:items-center rounded-2xl border-2 p-2 sm:p-2.5 transition-all gap-2 sm:gap-0 ${
+          isComplete && !isValid
+            ? 'bg-rose-950/30 border-rose-600 focus-within:border-rose-500'
+            : isComplete && isValid
+              ? 'bg-[#0B1C28] border-emerald-600/80 focus-within:border-emerald-500'
+              : 'bg-[#0B1C28] border-[#1A3447] focus-within:border-[#0284C7]'
+        }`}>
           
           <div className="flex items-center flex-1">
-            <div className="pl-3 pr-2 text-[#0284C7] flex items-center justify-center">
+            <div className={`pl-3 pr-2 flex items-center justify-center ${
+              isComplete && !isValid 
+                ? 'text-rose-400' 
+                : isComplete && isValid 
+                  ? 'text-emerald-400' 
+                  : 'text-[#0284C7]'
+            }`}>
               <CreditCard className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
 
@@ -74,7 +99,7 @@ export function RutSearch({ onSearch, isLoading, initialRut = '' }: RutSearchPro
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
-              placeholder="Ingresa RUT (ej: 18.570.949-3)"
+              placeholder="Ingresa RUT (ej: 16.519.617-1)"
               className="w-full bg-transparent text-white placeholder-slate-400 text-lg sm:text-2xl md:text-3xl font-mono font-bold tracking-wider px-2 py-2.5 sm:py-2 outline-none disabled:opacity-50 min-h-[48px]"
               autoComplete="off"
               spellCheck="false"
@@ -97,7 +122,11 @@ export function RutSearch({ onSearch, isLoading, initialRut = '' }: RutSearchPro
               type="button"
               onClick={executeSearch}
               disabled={isLoading || !rutInput.trim()}
-              className="btn-primary w-full sm:w-auto min-h-[48px] flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-base sm:text-lg tracking-wide disabled:opacity-40 disabled:pointer-events-none select-none active:scale-98 transition-all"
+              className={`w-full sm:w-auto min-h-[48px] flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-base sm:text-lg tracking-wide select-none active:scale-98 transition-all ${
+                isComplete && !isValid
+                  ? 'bg-rose-700 hover:bg-rose-600 border border-rose-500'
+                  : 'btn-primary'
+              }`}
             >
               {isLoading ? (
                 <>
@@ -117,17 +146,28 @@ export function RutSearch({ onSearch, isLoading, initialRut = '' }: RutSearchPro
         </div>
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-center justify-between text-xs text-slate-400 px-2 gap-2">
-        <span className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-[#0284C7]" />
-          <span>Escribe con o sin puntos y presiona <strong>Buscar</strong> o <strong>Enter</strong></span>
-        </span>
-
-        {!isValid && rutInput.length > 7 && (
-          <span className="text-[#EA580C] font-semibold">
-            ⚠ Formato de RUT preliminar
+      {/* Validation Feedback Banner */}
+      <div className="mt-2.5 flex flex-wrap items-center justify-between text-xs px-2 gap-2">
+        
+        {isComplete && !isValid ? (
+          <div className="flex items-center gap-2 text-rose-400 font-bold bg-rose-950/60 px-3 py-1.5 rounded-lg border border-rose-600/80 animate-in fade-in w-full sm:w-auto">
+            <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <span>
+              RUT Erróneo: Dígito verificador no corresponde según la norma chilena {expectedDv ? `(debería ser ${expectedDv})` : ''}.
+            </span>
+          </div>
+        ) : isComplete && isValid ? (
+          <div className="flex items-center gap-1.5 text-emerald-400 font-semibold animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>RUT Válido según norma chilena</span>
+          </div>
+        ) : (
+          <span className="flex items-center gap-1.5 text-slate-400">
+            <Sparkles className="w-3.5 h-3.5 text-[#0284C7]" />
+            <span>Escribe con o sin puntos y presiona <strong>Buscar</strong> o <strong>Enter</strong></span>
           </span>
         )}
+
       </div>
     </div>
   );

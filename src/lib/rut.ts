@@ -1,5 +1,5 @@
 /**
- * Chilean RUT, Phone and Payment helpers
+ * Chilean RUT, Phone and Payment helpers with official Modulo 11 validation
  */
 
 export const PASTORES_LIST = [
@@ -51,12 +51,38 @@ export function formatRut(rut: string): string {
   return `${formatted}-${dv}`;
 }
 
+export function calculateExpectedDv(rutDigits: string): string {
+  const clean = cleanRut(rutDigits);
+  const body = clean.length > 1 ? clean.slice(0, -1) : clean;
+  if (!body) return '';
+
+  let sum = 0;
+  let multiplier = 2;
+
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i], 10) * multiplier;
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+
+  const expectedMod = 11 - (sum % 11);
+  if (expectedMod === 11) return '0';
+  if (expectedMod === 10) return 'K';
+  return expectedMod.toString();
+}
+
+/**
+ * Validates Chilean RUT according to the official Modulo 11 algorithm.
+ * Example: 16519617-1 -> Valid (True)
+ * Example: 16519618-1 -> Invalid (False, expected DV is K)
+ */
 export function validateRut(rut: string): boolean {
   const clean = cleanRut(rut);
   if (clean.length < 7 || clean.length > 9) return false;
 
   const body = clean.slice(0, -1);
   const dv = clean.slice(-1);
+
+  if (!/^[0-9]+$/.test(body)) return false;
 
   let sum = 0;
   let multiplier = 2;
@@ -100,7 +126,7 @@ export function extractPriceFromText(text: string): number {
   if (match) {
     const num = parseInt(match[1], 10);
     if (num === 12000 || num === 5000 || num === 7000) return num;
-    if (num === 10000) return 12000; // 10k is converted to standard 12k
+    if (num === 10000) return 12000;
     return num;
   }
   const low = text.toLowerCase();
@@ -110,7 +136,7 @@ export function extractPriceFromText(text: string): number {
   if (low.includes('invitado') || low.includes('staff') || low.includes('gratis')) {
     return 0;
   }
-  return 12000; // Standard is Liderazgo General ($12.000.-)
+  return 12000;
 }
 
 export function isAttendeePrepaid(pago: string | undefined): boolean {

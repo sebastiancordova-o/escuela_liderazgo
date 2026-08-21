@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserPlus, Sparkles, User, Mail, Phone, Building, Tag, Loader2, AlertCircle, Users, CreditCard, Banknote } from 'lucide-react';
-import { formatRut, cleanRut, formatPhoneStrict, PASTORES_LIST, CATEGORIAS_OFICIALES } from '@/lib/rut';
+import { UserPlus, Sparkles, User, Mail, Phone, Building, Tag, Loader2, AlertCircle, Users, CreditCard, Banknote, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { formatRut, cleanRut, validateRut, calculateExpectedDv, formatPhoneStrict, PASTORES_LIST, CATEGORIAS_OFICIALES } from '@/lib/rut';
 import { Attendee } from '@/types/attendee';
+import { toast } from 'sonner';
 
 interface NewAttendeeFormProps {
   initialRut: string;
@@ -27,6 +28,11 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
   const [precioPagado, setPrecioPagado] = useState(12000);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const clean = cleanRut(rut);
+  const isRutComplete = clean.length >= 7;
+  const isRutValid = isRutComplete ? validateRut(clean) : true;
+  const expectedDv = isRutComplete && !isRutValid ? calculateExpectedDv(clean) : '';
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneStrict(e.target.value);
@@ -60,6 +66,13 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
       return;
     }
 
+    const cleanRutVal = cleanRut(rut);
+    if (!validateRut(cleanRutVal)) {
+      setErrorMsg(`RUT Erróneo: El RUT ${formatRut(cleanRutVal)} no cumple con la norma chilena.`);
+      toast.error('RUT Erróneo', { description: 'Por favor ingresa un RUT válido según el algoritmo de verificación.' });
+      return;
+    }
+
     const finalPhone = formatPhoneStrict(telefono);
     const finalPastor = isCustomPastor ? customPastor.trim() : pastorRed.trim();
 
@@ -72,7 +85,7 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
           nombre: nombre.trim(),
           apellido1: apellido1.trim(),
           apellido2: apellido2.trim(),
-          rut: cleanRut(rut),
+          rut: cleanRutVal,
           email: email.trim(),
           telefono: finalPhone,
           tipoAsistente,
@@ -132,18 +145,34 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
-            {/* RUT */}
+            {/* RUT with Validation */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                RUT *
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center justify-between">
+                <span>RUT *</span>
+                {isRutComplete && !isRutValid && (
+                  <span className="text-rose-400 font-bold text-[11px] flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    RUT Erróneo {expectedDv ? `(DV esperado: ${expectedDv})` : ''}
+                  </span>
+                )}
+                {isRutComplete && isRutValid && (
+                  <span className="text-emerald-400 font-bold text-[11px] flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    RUT Válido
+                  </span>
+                )}
               </label>
               <input
                 type="text"
                 required
                 value={rut}
                 onChange={(e) => setRut(formatRut(cleanRut(e.target.value)))}
-                className="w-full bg-[#07131B] border border-[#1A3447] focus:border-[#0284C7] rounded-xl px-4 py-2.5 text-white font-mono font-bold text-base sm:text-lg outline-none min-h-[46px]"
-                placeholder="12.345.678-9"
+                className={`w-full bg-[#07131B] border rounded-xl px-4 py-2.5 text-white font-mono font-bold text-base sm:text-lg outline-none min-h-[46px] transition-colors ${
+                  isRutComplete && !isRutValid 
+                    ? 'border-rose-600 focus:border-rose-500 bg-rose-950/20' 
+                    : 'border-[#1A3447] focus:border-[#0284C7]'
+                }`}
+                placeholder="16.519.617-1"
               />
             </div>
 
@@ -341,7 +370,7 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
           <div className="pt-3 border-t border-[#1A3447] flex flex-col sm:flex-row gap-3">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isRutComplete && !isRutValid)}
               className="btn-success min-h-[48px] flex-1 py-3 px-6 rounded-xl font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 text-white shadow-md disabled:opacity-50 active:scale-98"
             >
               {isSubmitting ? (
