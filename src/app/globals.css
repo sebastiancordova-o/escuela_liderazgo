@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-lab-navy: #091722;
+  --color-lab-cyan: #0284C7;
+  --color-lab-orange: #EA580C;
+}
+
+body {
+  background-color: #07131B;
+  color: #F1F5F9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #0A161F;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E384D;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #0284C7;
+}
+
+/* Solid Clean Panels */
+.solid-panel {
+  background-color: #0B1C28;
+  border: 1px solid #1A3447;
+}
+
+.solid-panel-hover:hover {
+  border-color: #0284C7;
+}
+
+/* Solid Buttons */
+.btn-primary {
+  background-color: #0284C7;
+  color: #FFFFFF;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.btn-primary:hover {
+  background-color: #0369A1;
+}
+
+.btn-success {
+  background-color: #16A34A;
+  color: #FFFFFF;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.btn-success:hover {
+  background-color: #15803D;
+}
+
+.btn-danger {
+  background-color: #DC2626;
+  color: #FFFFFF;
+  transition: background-color 0.15s ease;
+}
+.btn-danger:hover {
+  background-color: #B91C1C;
+}
