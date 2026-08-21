@@ -67,9 +67,6 @@ export function validateRut(rut: string): boolean {
   return dv === expectedDv;
 }
 
-/**
- * Formats Chilean phone number strictly without spaces: +569XXXXXXXX
- */
 export function formatPhoneStrict(phone: string): string {
   if (!phone) return '';
   let digits = phone.replace(/[^0-9]/g, '');
@@ -89,7 +86,7 @@ export function formatPhoneStrict(phone: string): string {
 }
 
 export function extractPriceFromText(text: string): number {
-  if (!text) return 10000;
+  if (!text) return 0;
   const clean = text.toString().replace(/\./g, '');
   const match = clean.match(/\$?(\d{4,6})/);
   if (match) {
@@ -100,12 +97,9 @@ export function extractPriceFromText(text: string): number {
   if (text.toLowerCase().includes('12')) return 12000;
   if (text.toLowerCase().includes('10')) return 10000;
   if (text.toLowerCase().includes('7')) return 7000;
-  return 10000;
+  return 0;
 }
 
-/**
- * Check if the attendee has pre-paid according to column 'Pago'
- */
 export function isAttendeePrepaid(pago: string | undefined): boolean {
   if (!pago) return false;
   const clean = pago.trim().toLowerCase();
