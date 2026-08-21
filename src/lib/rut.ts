@@ -16,6 +16,14 @@ export const PASTORES_LIST = [
   'Otra Iglesia',
 ];
 
+export const CATEGORIAS_OFICIALES = [
+  { nombre: 'Liderazgo General ($12.000.-)', precio: 12000 },
+  { nombre: 'Estudiante ($5.000.-)', precio: 5000 },
+  { nombre: 'Visita ($5.000.-)', precio: 5000 },
+  { nombre: 'Tercera Edad ($5.000.-)', precio: 5000 },
+  { nombre: 'Invitado Especial / Staff', precio: 0 },
+];
+
 export function cleanRut(rut: string): string {
   if (!rut) return '';
   return rut.toString().replace(/[^0-9kK]/g, '').toUpperCase();
@@ -86,18 +94,23 @@ export function formatPhoneStrict(phone: string): string {
 }
 
 export function extractPriceFromText(text: string): number {
-  if (!text) return 0;
+  if (!text) return 12000;
   const clean = text.toString().replace(/\./g, '');
   const match = clean.match(/\$?(\d{4,6})/);
   if (match) {
-    return parseInt(match[1], 10);
+    const num = parseInt(match[1], 10);
+    if (num === 12000 || num === 5000 || num === 7000) return num;
+    if (num === 10000) return 12000; // 10k is converted to standard 12k
+    return num;
   }
-  if (text.toLowerCase().includes('estudiante')) return 5000;
-  if (text.toLowerCase().includes('visita')) return 5000;
-  if (text.toLowerCase().includes('12')) return 12000;
-  if (text.toLowerCase().includes('10')) return 10000;
-  if (text.toLowerCase().includes('7')) return 7000;
-  return 0;
+  const low = text.toLowerCase();
+  if (low.includes('estudiante') || low.includes('visita') || low.includes('tercera') || low.includes('edad') || low.includes('5')) {
+    return 5000;
+  }
+  if (low.includes('invitado') || low.includes('staff') || low.includes('gratis')) {
+    return 0;
+  }
+  return 12000; // Standard is Liderazgo General ($12.000.-)
 }
 
 export function isAttendeePrepaid(pago: string | undefined): boolean {

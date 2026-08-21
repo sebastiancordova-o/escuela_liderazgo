@@ -32,7 +32,8 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
   
   const isEstudiante = attendee.tipoAsistente.toLowerCase().includes('estudiante');
   const isVisita = attendee.tipoAsistente.toLowerCase().includes('visita');
-  const isLiderazgo = attendee.tipoAsistente.toLowerCase().includes('liderazgo');
+  const isTerceraEdad = attendee.tipoAsistente.toLowerCase().includes('tercera') || attendee.tipoAsistente.toLowerCase().includes('edad');
+  const isLiderazgo = !isEstudiante && !isVisita && !isTerceraEdad;
 
   // Check if prepaid in database
   const isPrepaid = isAttendeePrepaid(attendee.pago);
@@ -43,7 +44,6 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
     : extractPriceFromText(attendee.tipoAsistente || attendee.pago || '');
   
   const [precio, setPrecio] = useState<number>(initialPrice);
-  const [tipoAsistenteState, setTipoAsistenteState] = useState<string>(attendee.tipoAsistente || 'Adhesión General');
   const [modalidadPago, setModalidadPago] = useState<'Transferencia' | 'Efectivo'>('Efectivo');
   
   // Pastor de Red State
@@ -56,7 +56,6 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
       ? attendee.precioPagado 
       : extractPriceFromText(attendee.tipoAsistente || attendee.pago || '');
     setPrecio(derivedPrice);
-    setTipoAsistenteState(attendee.tipoAsistente || 'Adhesión General');
     
     if (attendee.plataforma?.toLowerCase().includes('transferencia')) {
       setModalidadPago('Transferencia');
@@ -74,14 +73,6 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
       setCustomPastor('');
     }
   }, [attendee]);
-
-  const handleTipoAsistenteChange = (newTipo: string) => {
-    setTipoAsistenteState(newTipo);
-    const newP = extractPriceFromText(newTipo);
-    if (newP > 0) {
-      setPrecio(newP);
-    }
-  };
 
   const handlePastorSelect = (val: string) => {
     if (val === '__OTRO__') {
@@ -161,11 +152,11 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
                   ? 'bg-sky-900/60 text-sky-200 border-sky-600' 
                   : isVisita 
                     ? 'bg-purple-900/60 text-purple-200 border-purple-600'
-                    : isLiderazgo
-                      ? 'bg-amber-900/60 text-amber-200 border-amber-600'
+                    : isTerceraEdad
+                      ? 'bg-teal-900/60 text-teal-200 border-teal-600'
                       : 'bg-[#0E2A3D] text-[#38BDF8] border-[#0284C7]/60'
               }`}>
-                {attendee.tipoAsistente || 'Adhesión General'}
+                {attendee.tipoAsistente || 'Liderazgo General ($12.000.-)'}
               </span>
 
               {attendee.organizacion && (
@@ -271,7 +262,7 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
                 <div className="text-right">
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Monto</span>
                   <span className="text-base font-mono font-bold text-emerald-300">
-                    ${precio > 0 ? precio.toLocaleString('es-CL') : 'Pagado'}
+                    ${precio > 0 ? precio.toLocaleString('es-CL') : '12.000'}
                   </span>
                 </div>
               </div>
@@ -288,14 +279,14 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
                       REGISTRAR PAGO EN PUERTA
                     </p>
                     <p className="text-[11px] text-slate-300">
-                      Selecciona la modalidad de pago y confirma el monto según su categoría.
+                      Categoría registrada: <strong className="text-[#38BDF8]">{attendee.tipoAsistente || 'Liderazgo General ($12.000.-)'}</strong>
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 self-start sm:self-auto bg-[#07131B] px-3 py-1.5 rounded-lg border border-[#1A3447]">
                   <Tag className="w-3.5 h-3.5 text-[#0284C7]" />
                   <span className="text-xs font-semibold text-slate-200">
-                    {attendee.tipoAsistente || 'Adhesión General'}
+                    {attendee.tipoAsistente || 'Liderazgo General ($12.000.-)'}
                   </span>
                 </div>
               </div>
@@ -338,45 +329,38 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
                 </div>
               </div>
 
-              {/* Category & Price Adjustment */}
+              {/* Official Tariffs Selection (ONLY 12.000 and 5.000) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
                   <span>Monto a Cobrar ($):</span>
-                  <span className="font-mono text-emerald-400 font-bold">${precio.toLocaleString('es-CL')}</span>
+                  <span className="font-mono text-emerald-400 font-bold text-sm">${precio.toLocaleString('es-CL')}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <DollarSign className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
-                    <input
-                      type="number"
-                      value={precio}
-                      onChange={(e) => setPrecio(Number(e.target.value) || 0)}
-                      step={500}
-                      className="w-full bg-[#05111A] border border-[#1A3447] focus:border-[#0284C7] rounded-lg pl-8 pr-2 py-2 text-white text-sm font-bold font-mono outline-none"
-                    />
-                  </div>
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button 
                     type="button" 
                     onClick={() => setPrecio(12000)}
-                    className={`px-3 py-2 rounded-lg text-xs font-bold border transition-colors ${precio === 12000 ? 'bg-[#0284C7] text-white border-[#0284C7]' : 'bg-[#0A1822] text-slate-300 border-[#1A3447]'}`}
+                    className={`p-2.5 rounded-xl text-xs font-bold border transition-all text-left flex items-center justify-between ${
+                      precio === 12000 
+                        ? 'bg-[#0284C7] text-white border-[#0284C7] shadow-sm' 
+                        : 'bg-[#0A1822] text-slate-300 border-[#1A3447] hover:border-slate-600'
+                    }`}
                   >
-                    $12.000 (General)
+                    <span>Liderazgo General</span>
+                    <span className="font-mono font-black text-sm">$12.000.-</span>
                   </button>
-                  <button 
-                    type="button" 
-                    onClick={() => setPrecio(10000)}
-                    className={`px-3 py-2 rounded-lg text-xs font-bold border transition-colors ${precio === 10000 ? 'bg-[#0284C7] text-white border-[#0284C7]' : 'bg-[#0A1822] text-slate-300 border-[#1A3447]'}`}
-                  >
-                    $10.000 (Líder)
-                  </button>
+
                   <button 
                     type="button" 
                     onClick={() => setPrecio(5000)}
-                    className={`px-3 py-2 rounded-lg text-xs font-bold border transition-colors ${precio === 5000 ? 'bg-[#0284C7] text-white border-[#0284C7]' : 'bg-[#0A1822] text-slate-300 border-[#1A3447]'}`}
+                    className={`p-2.5 rounded-xl text-xs font-bold border transition-all text-left flex items-center justify-between ${
+                      precio === 5000 
+                        ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' 
+                        : 'bg-[#0A1822] text-slate-300 border-[#1A3447] hover:border-slate-600'
+                    }`}
                   >
-                    $5.000 (Estudiante/Visita)
+                    <span>Estudiante / Visita / 3ra Edad</span>
+                    <span className="font-mono font-black text-sm">$5.000.-</span>
                   </button>
                 </div>
               </div>
@@ -409,7 +393,7 @@ export function AttendeeCard({ attendee, onMarkAttendance, isUpdating }: Attende
                   ? '✓ Actualizar Asistió' 
                   : isPrepaid 
                     ? 'Marcar Asistió (Pagado)' 
-                    : `Marcar Pagado (${modalidadPago}) y Asistió`}
+                    : `Marcar Pagado (${modalidadPago} - $${precio.toLocaleString('es-CL')}) y Asistió`}
               </span>
             </button>
 

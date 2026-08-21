@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { UserPlus, Sparkles, User, Mail, Phone, Building, Tag, Loader2, AlertCircle, Users, CreditCard, Banknote } from 'lucide-react';
-import { formatRut, cleanRut, formatPhoneStrict, PASTORES_LIST } from '@/lib/rut';
+import { formatRut, cleanRut, formatPhoneStrict, PASTORES_LIST, CATEGORIAS_OFICIALES } from '@/lib/rut';
 import { Attendee } from '@/types/attendee';
 
 interface NewAttendeeFormProps {
@@ -18,7 +18,7 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
   const [apellido2, setApellido2] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('+569');
-  const [tipoAsistente, setTipoAsistente] = useState('Adhesión General ($12.000)');
+  const [tipoAsistente, setTipoAsistente] = useState('Liderazgo General ($12.000.-)');
   const [organizacion, setOrganizacion] = useState('Catedral de la Alabanza');
   const [pastorRed, setPastorRed] = useState('');
   const [customPastor, setCustomPastor] = useState('');
@@ -36,8 +36,9 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
   const handleTipoChange = (val: string) => {
     setTipoAsistente(val);
     if (val.includes('12')) setPrecioPagado(12000);
-    else if (val.includes('10')) setPrecioPagado(10000);
     else if (val.includes('5')) setPrecioPagado(5000);
+    else if (val.includes('Invitado') || val.includes('Staff')) setPrecioPagado(0);
+    else setPrecioPagado(12000);
   };
 
   const handlePastorSelect = (val: string) => {
@@ -262,10 +263,10 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
               </div>
             </div>
 
-            {/* Tipo Asistente */}
+            {/* Tipo Asistente (Official categories) */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Tipo de Asistente
+                Tipo de Asistente (Tarifa Oficial)
               </label>
               <div className="relative">
                 <Tag className="absolute left-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -274,10 +275,10 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
                   onChange={(e) => handleTipoChange(e.target.value)}
                   className="w-full bg-[#07131B] border border-[#1A3447] focus:border-[#0284C7] rounded-xl pl-10 pr-4 py-2.5 text-white text-sm font-medium outline-none cursor-pointer min-h-[46px]"
                 >
-                  <option value="Adhesión General ($12.000)">Adhesión General ($12.000)</option>
-                  <option value="Estudiante ($5.000)">Estudiante ($5.000)</option>
-                  <option value="Visita ($5.000)">Visita ($5.000)</option>
-                  <option value="Liderazgo general ($10.000)">Liderazgo general ($10.000)</option>
+                  <option value="Liderazgo General ($12.000.-)">Liderazgo General ($12.000.-)</option>
+                  <option value="Estudiante ($5.000.-)">Estudiante ($5.000.-)</option>
+                  <option value="Visita ($5.000.-)">Visita ($5.000.-)</option>
+                  <option value="Tercera Edad ($5.000.-)">Tercera Edad ($5.000.-)</option>
                   <option value="Invitado Especial / Staff">Invitado Especial / Staff</option>
                 </select>
               </div>
@@ -286,7 +287,7 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
             {/* Medio de Pago (2 Opciones: Transferencia o Efectivo) */}
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                Medio de Pago en Puerta (2 Opciones):
+                Medio de Pago en Puerta:
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button

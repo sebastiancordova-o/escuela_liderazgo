@@ -234,6 +234,7 @@ export function Table2026View() {
                 <th className="px-3.5 py-3">RUT</th>
                 <th className="px-3.5 py-3">Teléfono</th>
                 <th className="px-3.5 py-3">Pastor de Red</th>
+                <th className="px-3.5 py-3">Tipo Asistente</th>
                 <th className="px-3.5 py-3">Plataforma</th>
                 <th className="px-3.5 py-3">Precio Pagado</th>
               </tr>
@@ -241,14 +242,14 @@ export function Table2026View() {
             <tbody className="divide-y divide-[#1A3447]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-slate-400">
+                  <td colSpan={9} className="text-center py-10 text-slate-400">
                     <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#0284C7]" />
                     <span>Cargando tabla 2026 desde Google Sheets...</span>
                   </td>
                 </tr>
               ) : attendees.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-slate-400">
+                  <td colSpan={9} className="text-center py-10 text-slate-400">
                     <span>No hay participantes registrados en la tabla 2026 todavía.</span>
                   </td>
                 </tr>
@@ -296,14 +297,18 @@ export function Table2026View() {
                       {att.pastorRed || '-'}
                     </td>
 
+                    <td className="px-3.5 py-2.5 text-slate-300 text-xs whitespace-nowrap">
+                      {att.tipoAsistente || 'Liderazgo General'}
+                    </td>
+
                     <td className="px-3.5 py-2.5 whitespace-nowrap">
                       <span className="px-2 py-0.5 rounded bg-[#07131B] border border-[#1A3447] text-slate-300 text-xs">
-                        {att.plataforma || 'Manual Web'}
+                        {att.plataforma || 'Efectivo'}
                       </span>
                     </td>
 
                     <td className="px-3.5 py-2.5 font-mono font-bold text-emerald-400 whitespace-nowrap">
-                      ${Number(att.precioPagado || att.pago || 10000).toLocaleString('es-CL')}
+                      ${Number(att.precioPagado || 12000).toLocaleString('es-CL')}
                     </td>
                   </tr>
                 ))
@@ -455,20 +460,47 @@ export function Table2026View() {
                   />
                 </div>
 
+                {/* Tipo de Asistente (Official 4 categories) */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                    Tipo de Asistente (Tarifa Oficial)
+                  </label>
+                  <select
+                    value={editingAttendee.tipoAsistente}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      let p = 12000;
+                      if (val.includes('5')) p = 5000;
+                      else if (val.includes('Staff') || val.includes('Invitado')) p = 0;
+                      setEditingAttendee({ 
+                        ...editingAttendee, 
+                        tipoAsistente: val,
+                        precioPagado: p
+                      });
+                    }}
+                    className="w-full bg-[#07131B] border border-[#1A3447] focus:border-[#0284C7] rounded-lg px-3 py-2 text-white text-sm outline-none"
+                  >
+                    <option value="Liderazgo General ($12.000.-)">Liderazgo General ($12.000.-)</option>
+                    <option value="Estudiante ($5.000.-)">Estudiante ($5.000.-)</option>
+                    <option value="Visita ($5.000.-)">Visita ($5.000.-)</option>
+                    <option value="Tercera Edad ($5.000.-)">Tercera Edad ($5.000.-)</option>
+                    <option value="Invitado Especial / Staff">Invitado Especial / Staff</option>
+                  </select>
+                </div>
+
                 {/* Plataforma */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                    Plataforma
+                    Plataforma / Medio de Pago
                   </label>
                   <select
-                    value={editingAttendee.plataforma || 'Manual Web'}
+                    value={editingAttendee.plataforma || 'Efectivo'}
                     onChange={(e) => setEditingAttendee({ ...editingAttendee, plataforma: e.target.value })}
                     className="w-full bg-[#07131B] border border-[#1A3447] focus:border-[#0284C7] rounded-lg px-3 py-2 text-white text-sm outline-none"
                   >
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
                     <option value="Plataforma GLS">Plataforma GLS</option>
-                    <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-                    <option value="Pago Puerta / Efectivo">Pago Puerta / Efectivo</option>
-                    <option value="Manual Web">Manual Web</option>
                     <option value="NR / Sin Registro">NR / Sin Registro</option>
                   </select>
                 </div>
@@ -480,22 +512,9 @@ export function Table2026View() {
                   </label>
                   <input
                     type="number"
-                    value={editingAttendee.precioPagado ?? 10000}
+                    value={editingAttendee.precioPagado ?? 12000}
                     onChange={(e) => setEditingAttendee({ ...editingAttendee, precioPagado: Number(e.target.value) || 0 })}
                     className="w-full bg-[#07131B] border border-[#1A3447] focus:border-[#0284C7] rounded-lg px-3 py-2 text-white font-mono font-bold text-sm outline-none"
-                  />
-                </div>
-
-                {/* Tipo de Asistente */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                    Tipo de Asistente
-                  </label>
-                  <input
-                    type="text"
-                    value={editingAttendee.tipoAsistente}
-                    onChange={(e) => setEditingAttendee({ ...editingAttendee, tipoAsistente: e.target.value })}
-                    className="w-full bg-[#07131B] border border-[#1A3447] focus:border-[#0284C7] rounded-lg px-3 py-2 text-white text-sm outline-none"
                   />
                 </div>
 
