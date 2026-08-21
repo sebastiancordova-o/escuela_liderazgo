@@ -72,7 +72,7 @@ export function calculateExpectedDv(rutDigits: string): string {
 
 /**
  * Validates Chilean RUT according to the official Modulo 11 algorithm.
- * Example: 16519617-1 -> Valid (True)
+ * Example: 12345678-5 -> Valid (True)
  * Example: 16519618-1 -> Invalid (False, expected DV is K)
  */
 export function validateRut(rut: string): boolean {

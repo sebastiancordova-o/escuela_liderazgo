@@ -172,7 +172,7 @@ export function NewAttendeeForm({ initialRut, onRegisterSuccess, onCancel }: New
                     ? 'border-rose-600 focus:border-rose-500 bg-rose-950/20' 
                     : 'border-[#1A3447] focus:border-[#0284C7]'
                 }`}
-                placeholder="16.519.617-1"
+                placeholder="12.345.678-5"
               />
             </div>
 
